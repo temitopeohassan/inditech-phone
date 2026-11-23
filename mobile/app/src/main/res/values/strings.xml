@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="device_admin_description">Protects this financed device and enforces the terms of your device loan.</string>
+    <string name="enforcement_channel">Device protection</string>
+    <string name="enforcement_running">Device protection is active</string>
+    <string name="reminders_channel">Payment reminders</string>
+</resources>

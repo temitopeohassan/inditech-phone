@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: device_platform
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports: ["1883:1883"]
+    volumes: [./deploy/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro]
+
+  migrate:
+    build: .
+    command: ["node", "dist/db/migrate.js"]
+    entrypoint: []
+    environment:
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@postgres:5432/device_platform
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: .
+    env_file: .env.example
+    environment:
+      DATABASE_URL: postgres://app_runtime:app_runtime@postgres:5432/device_platform
+      DATABASE_ADMIN_URL: postgres://postgres:postgres@postgres:5432/device_platform
+      REDIS_URL: redis://redis:6379
+      MQTT_URL: mqtt://mosquitto:1883
+    ports: ["8080:8080"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+      mosquitto: { condition: service_started }
+
+  worker:
+    build: .
+    command: ["node", "dist/worker.js"]
+    env_file: .env.example
+    environment:
+      DATABASE_URL: postgres://app_runtime:app_runtime@postgres:5432/device_platform
+      REDIS_URL: redis://redis:6379
+      MQTT_URL: mqtt://mosquitto:1883
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      redis: { condition: service_started }
+
+volumes:
+  pgdata:
