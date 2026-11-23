@@ -7,3 +7,5 @@ local.properties
 captures/
 *.keystore
 !debug.keystore
+# Raw Paparazzi output (copied to mobile/screenshots by scripts/collect-screenshots.sh)
+app/src/test/snapshots/
